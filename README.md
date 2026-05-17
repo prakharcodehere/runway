@@ -102,10 +102,6 @@ npm run dev
 # open http://localhost:5173
 ```
 
-## Deploy to Vercel
-
-Connect this repo on [vercel.com](https://vercel.com) — it auto-detects Vite, no config needed.
-
 ## License
 
 MIT
