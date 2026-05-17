@@ -147,26 +147,12 @@ export default function App() {
   }, [addLog]);
 
   const handleStartChallenge = useCallback((challenge) => {
-    const reqLines = challenge.requirements.map((r) => `- [ ] ${r}`).join("\n");
-    const endpointSection = challenge.endpoint
-      ? `\n## Endpoint\n\`\`\`\n${challenge.endpoint}\n\`\`\`\n` : "";
-
-    const readmeCode = `# ${challenge.title}
-
-**Difficulty:** ${challenge.difficulty.charAt(0).toUpperCase() + challenge.difficulty.slice(1)} · **Time:** ${challenge.timeLimit} min
-${endpointSection}
-## Requirements
-
-${reqLines}
-`;
-
     const appCode = `import { View, Text, StyleSheet } from "react-native";\n\nexport default function App() {\n  return (\n    <View style={styles.container}>\n      <Text style={styles.text}>Start building...</Text>\n    </View>\n  );\n}\n\nconst styles = StyleSheet.create({\n  container: { flex: 1, backgroundColor: "#0f172a", alignItems: "center", justifyContent: "center" },\n  text: { color: "#94a3b8", fontSize: 16 },\n});\n`;
 
     const appFile = { name: "App.tsx", label: "new", accent: "aurora", code: appCode, previewTitle: challenge.title, previewCopy: "" };
-    const mdFile  = { name: "CHALLENGE.md", label: "challenge", accent: "mint", code: readmeCode, previewTitle: "", previewCopy: "" };
 
-    setFiles([appFile, mdFile]);
-    setFileContents({ "App.tsx": appCode, "CHALLENGE.md": readmeCode });
+    setFiles([appFile]);
+    setFileContents({ "App.tsx": appCode });
     setActiveFile("App.tsx");
     setActiveChallenge(challenge);
     setTestResults(null);
