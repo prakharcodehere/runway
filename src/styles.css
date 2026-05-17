@@ -519,6 +519,22 @@ h1, h2, h3, h4, h5 { margin: 0; }
   border-color: rgba(142,165,255,0.4);
 }
 
+.topbar-github {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: 6px;
+  color: var(--muted);
+  transition: color 150ms, background 150ms;
+  flex-shrink: 0;
+}
+.topbar-github:hover {
+  color: var(--text);
+  background: var(--bg-4);
+}
+
 /* ── IDE body ─────────────────────────────────────────── */
 .ide-body {
   display: flex;
