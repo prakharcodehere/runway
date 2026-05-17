@@ -1,12 +1,19 @@
 import { useState, useRef, useEffect, useCallback } from "react";
 
-export default function IdeSidebar({ files, activeFile, onFileSelect, onNewFile }) {
+export default function IdeSidebar({
+  files, activeFile, onFileSelect, onNewFile,
+  detectedPackages = [], extraPackages = [],
+  onAddPackage, onRemovePackage,
+}) {
   // "idle" | "picking" | "file" | "folder"
   const [mode, setMode] = useState("idle");
   const [newName, setNewName] = useState("");
-  const [folderPrefix, setFolderPrefix] = useState(""); // for file-inside-folder
+  const [folderPrefix, setFolderPrefix] = useState("");
+  const [pkgOpen, setPkgOpen] = useState(false);
+  const [pkgInput, setPkgInput] = useState("");
   const inputRef = useRef(null);
   const menuRef = useRef(null);
+  const pkgInputRef = useRef(null);
 
   useEffect(() => {
     if (mode === "file" || mode === "folder") inputRef.current?.focus();
@@ -59,6 +66,13 @@ export default function IdeSidebar({ files, activeFile, onFileSelect, onNewFile 
     }
     return acc;
   }, {});
+
+  const commitPkg = useCallback(() => {
+    const pkg = pkgInput.trim().toLowerCase();
+    if (pkg) { onAddPackage(pkg); setPkgInput(""); }
+  }, [pkgInput, onAddPackage]);
+
+  const allPkgCount = detectedPackages.length + extraPackages.length;
 
   return (
     <aside className="ide-sidebar">
@@ -139,6 +153,79 @@ export default function IdeSidebar({ files, activeFile, onFileSelect, onNewFile 
             ))}
           </div>
         ))}
+      {/* ── Packages panel ── */}
+      <div className="pkg-section">
+        <button
+          type="button"
+          className="pkg-header"
+          onClick={() => setPkgOpen((o) => !o)}
+        >
+          <span className="pkg-header-label">
+            <span className="pkg-header-caret">{pkgOpen ? "▾" : "▸"}</span>
+            Packages
+          </span>
+          {allPkgCount > 0 && (
+            <span className="pkg-count">{allPkgCount}</span>
+          )}
+        </button>
+
+        {pkgOpen && (
+          <div className="pkg-body">
+            {/* Auto-detected */}
+            {detectedPackages.length > 0 && (
+              <div className="pkg-group">
+                <div className="pkg-group-label">auto-detected</div>
+                {detectedPackages.map((name) => (
+                  <div key={name} className="pkg-chip pkg-chip-auto">
+                    <span className="pkg-chip-dot" />
+                    {name}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Manually added */}
+            {extraPackages.length > 0 && (
+              <div className="pkg-group">
+                <div className="pkg-group-label">added</div>
+                {extraPackages.map((name) => (
+                  <div key={name} className="pkg-chip pkg-chip-manual">
+                    <span className="pkg-chip-dot" />
+                    {name}
+                    <button
+                      type="button"
+                      className="pkg-chip-remove"
+                      onClick={() => onRemovePackage(name)}
+                    >✕</button>
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Add package input */}
+            <div className="pkg-input-row">
+              <input
+                ref={pkgInputRef}
+                type="text"
+                className="pkg-input"
+                placeholder="axios, lodash, date-fns…"
+                value={pkgInput}
+                onChange={(e) => setPkgInput(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") commitPkg();
+                  if (e.key === "Escape") setPkgInput("");
+                }}
+              />
+              <button
+                type="button"
+                className="pkg-add-btn"
+                onClick={commitPkg}
+                disabled={!pkgInput.trim()}
+              >+</button>
+            </div>
+          </div>
+        )}
+      </div>
     </aside>
   );
 }

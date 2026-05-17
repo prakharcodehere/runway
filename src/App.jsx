@@ -3,7 +3,7 @@ import BootOverlay from "./components/BootOverlay";
 import IdeShell from "./components/IdeShell";
 import ShareModal from "./components/ShareModal";
 import { FILES, BOOT_STEPS, LOG_TEMPLATES } from "./data";
-import { generateSrcdoc } from "./utils/livePreview";
+import { generateSrcdoc, detectPackages } from "./utils/livePreview";
 
 export default function App() {
   const [isLoaded, setIsLoaded] = useState(false);
@@ -17,6 +17,7 @@ export default function App() {
   const [logs, setLogs] = useState([]);
   const [srcdoc, setSrcdoc] = useState("");
   const [showShare, setShowShare] = useState(false);
+  const [extraPackages, setExtraPackages] = useState([]);
   const rootRef = useRef(null);
   const rafRef = useRef(null);
 
@@ -80,15 +81,26 @@ export default function App() {
     return () => clearInterval(timer);
   }, [isLoaded, addLog]);
 
+  // Listen for package load/error messages from the preview iframe
+  useEffect(() => {
+    const handler = (e) => {
+      if (e.data?.type === "runway-pkg") {
+        if (e.data.status === "loaded") addLog(`packages: loaded ${e.data.name}`, "system");
+        if (e.data.status === "error") addLog(`packages: failed to load ${e.data.name} — ${e.data.error}`, "trace");
+      }
+    };
+    window.addEventListener("message", handler);
+    return () => window.removeEventListener("message", handler);
+  }, [addLog]);
+
   // Live preview: regenerate srcdoc 600ms after any file change
-  // This is the simplest reliable approach — no ref tricks, no closure issues
   useEffect(() => {
     if (!isLoaded) return;
     const t = setTimeout(() => {
-      setSrcdoc(generateSrcdoc(files, fileContents));
+      setSrcdoc(generateSrcdoc(files, fileContents, extraPackages));
     }, 600);
     return () => clearTimeout(t);
-  }, [files, fileContents, isLoaded]);
+  }, [files, fileContents, extraPackages, isLoaded]);
 
   const handleFileChange = useCallback((name, value) => {
     setFileContents((prev) => ({ ...prev, [name]: value }));
@@ -119,11 +131,23 @@ export default function App() {
   }, [addLog]);
 
   // Run button: immediate refresh, no debounce
+  const handleAddPackage = useCallback((name) => {
+    const pkg = name.trim().toLowerCase();
+    if (!pkg) return;
+    setExtraPackages((prev) => prev.includes(pkg) ? prev : [...prev, pkg]);
+    addLog(`packages: added ${pkg}`, "system");
+  }, [addLog]);
+
+  const handleRemovePackage = useCallback((name) => {
+    setExtraPackages((prev) => prev.filter((p) => p !== name));
+    addLog(`packages: removed ${name}`, "trace");
+  }, [addLog]);
+
   const handleRun = useCallback(() => {
-    setSrcdoc(generateSrcdoc(files, fileContents));
+    setSrcdoc(generateSrcdoc(files, fileContents, extraPackages));
     addLog("metro: compiling workspace bundle…", "system");
     setTimeout(() => addLog("metro: compiled in 184 ms — preview refreshed", "preview"), 400);
-  }, [files, fileContents, addLog]);
+  }, [files, fileContents, extraPackages, addLog]);
 
   const handleAction = useCallback((action) => {
     if (action === "share") { setShowShare(true); return; }
@@ -138,6 +162,11 @@ export default function App() {
   const activeFileData = useMemo(
     () => files.find((f) => f.name === activeFile) ?? files[0],
     [files, activeFile]
+  );
+
+  const detectedPackages = useMemo(
+    () => detectPackages(fileContents),
+    [fileContents]
   );
 
   return (
@@ -158,6 +187,8 @@ export default function App() {
         fileContents={fileContents}
         srcdoc={srcdoc}
         logs={logs}
+        detectedPackages={detectedPackages}
+        extraPackages={extraPackages}
         onFileSelect={handleFileSelect}
         onFileChange={handleFileChange}
         onNewFile={handleNewFile}
@@ -165,6 +196,8 @@ export default function App() {
         onAction={handleAction}
         onClearLogs={handleClearLogs}
         onSave={handleRun}
+        onAddPackage={handleAddPackage}
+        onRemovePackage={handleRemovePackage}
       />
     </div>
   );

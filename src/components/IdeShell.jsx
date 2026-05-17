@@ -11,6 +11,8 @@ const IdeShell = memo(function IdeShell({
   fileContents,
   srcdoc,
   logs,
+  detectedPackages,
+  extraPackages,
   onFileSelect,
   onFileChange,
   onNewFile,
@@ -18,6 +20,8 @@ const IdeShell = memo(function IdeShell({
   onAction,
   onClearLogs,
   onSave,
+  onAddPackage,
+  onRemovePackage,
 }) {
   return (
     <div className="ide-shell">
@@ -100,6 +104,10 @@ const IdeShell = memo(function IdeShell({
           activeFile={activeFile}
           onFileSelect={onFileSelect}
           onNewFile={onNewFile}
+          detectedPackages={detectedPackages}
+          extraPackages={extraPackages}
+          onAddPackage={onAddPackage}
+          onRemovePackage={onRemovePackage}
         />
         <IdeEditor
           files={files}
