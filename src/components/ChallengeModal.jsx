@@ -214,19 +214,6 @@ export default function ChallengeModal({ challenges, onStart, onClose, onAddChal
                   ))}
                 </ul>
 
-                <div className="challenge-section-label">
-                  Test cases <span className="challenge-points-total">({selected.testCases.reduce((s, t) => s + t.points, 0)} pts)</span>
-                </div>
-                <div className="challenge-test-list">
-                  {selected.testCases.map((t) => (
-                    <div key={t.id} className={`challenge-test-item${t.group === "practice" ? " test-item-practice" : ""}`}>
-                      <span className="challenge-test-dot" />
-                      <span>{t.label}</span>
-                      {t.group === "practice" && <span className="challenge-test-tag">best practice</span>}
-                      <span className="challenge-test-pts">{t.points}pts</span>
-                    </div>
-                  ))}
-                </div>
               </div>
 
               <div className="challenge-detail-footer">
