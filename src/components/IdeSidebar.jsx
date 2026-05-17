@@ -311,6 +311,16 @@ function TreeItem({ file, indent, isActive, onSelect, onRename }) {
     >
       <span className={`tree-dot ${file.accent}`} />
       <span className="tree-name">{shortName}</span>
+      <span
+        className="tree-rename-btn"
+        title="Rename"
+        onClick={(e) => { e.stopPropagation(); setInputVal(shortName); setEditing(true); }}
+      >
+        <svg width="11" height="11" viewBox="0 0 11 11" fill="none">
+          <path d="M7.5 1.5 L9.5 3.5 L3.5 9.5 L1 10 L1.5 7.5 Z" stroke="currentColor" strokeWidth="1.2" strokeLinejoin="round"/>
+          <path d="M6.5 2.5 L8.5 4.5" stroke="currentColor" strokeWidth="1.2" strokeLinecap="round"/>
+        </svg>
+      </span>
     </button>
   );
 }

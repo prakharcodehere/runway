@@ -594,6 +594,18 @@ h1, h2, h3, h4, h5 { margin: 0; }
 
 .tree-caret { color: var(--muted); font-size: 0.7rem; }
 
+.tree-rename-btn {
+  margin-left: auto;
+  display: none;
+  align-items: center;
+  color: var(--muted);
+  padding: 2px 3px;
+  border-radius: 3px;
+  flex-shrink: 0;
+}
+.tree-rename-btn:hover { color: var(--accent); }
+.tree-item:hover .tree-rename-btn { display: flex; }
+
 .tree-item-editing {
   display: flex;
   align-items: center;
