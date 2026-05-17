@@ -4,11 +4,15 @@ export default function IdeSidebar({
   files, activeFile, onFileSelect, onNewFile,
   detectedPackages = [], extraPackages = [],
   onAddPackage, onRemovePackage,
+  projectName, onRenameProject,
 }) {
   // "idle" | "picking" | "file" | "folder"
   const [mode, setMode] = useState("idle");
   const [newName, setNewName] = useState("");
   const [folderPrefix, setFolderPrefix] = useState("");
+  const [editingProject, setEditingProject] = useState(false);
+  const [projectInput, setProjectInput] = useState(projectName);
+  const projectInputRef = useRef(null);
   const [pkgOpen, setPkgOpen] = useState(false);
   const [pkgInput, setPkgInput] = useState("");
   const inputRef = useRef(null);
@@ -18,6 +22,16 @@ export default function IdeSidebar({
   useEffect(() => {
     if (mode === "file" || mode === "folder") inputRef.current?.focus();
   }, [mode]);
+
+  useEffect(() => {
+    if (editingProject) projectInputRef.current?.focus();
+  }, [editingProject]);
+
+  const commitProjectName = useCallback(() => {
+    const name = projectInput.trim();
+    if (name && name !== projectName) onRenameProject(name);
+    setEditingProject(false);
+  }, [projectInput, projectName, onRenameProject]);
 
   // Close picker if clicked outside
   useEffect(() => {
@@ -100,9 +114,25 @@ export default function IdeSidebar({
         </div>
       </div>
 
-      <div className="tree-root-label">
+      <div className="tree-root-label" onDoubleClick={() => { setProjectInput(projectName); setEditingProject(true); }}>
         <span className="tree-caret">▾</span>
-        runway-prototype
+        {editingProject ? (
+          <input
+            ref={projectInputRef}
+            type="text"
+            className="tree-project-input"
+            value={projectInput}
+            onChange={(e) => setProjectInput(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") commitProjectName();
+              if (e.key === "Escape") setEditingProject(false);
+            }}
+            onBlur={commitProjectName}
+            onClick={(e) => e.stopPropagation()}
+          />
+        ) : (
+          <span title="Double-click to rename">{projectName}</span>
+        )}
       </div>
 
       {/* New file/folder input */}

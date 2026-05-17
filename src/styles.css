@@ -594,6 +594,21 @@ h1, h2, h3, h4, h5 { margin: 0; }
 
 .tree-caret { color: var(--muted); font-size: 0.7rem; }
 
+.tree-root-label { cursor: default; }
+.tree-root-label span[title] { cursor: text; }
+.tree-project-input {
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--accent);
+  color: var(--text-dim);
+  font-size: 0.8rem;
+  font-weight: 600;
+  font-family: inherit;
+  outline: none;
+  width: 120px;
+  padding: 0 2px;
+}
+
 .tree-item {
   display: flex;
   align-items: center;

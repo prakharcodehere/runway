@@ -126,10 +126,85 @@ export default function IdeEditor({ files, activeFile, fileContents, onFileSelec
       "ts:react.d.ts"
     );
     monaco.languages.typescript.typescriptDefaults.addExtraLib(
-      `declare module "react-native" { const RN: any; export = RN; }
-       declare module "expo-status-bar" { export const StatusBar: any; }
-       declare module "expo-*" { const M: any; export = M; }
-       declare module "@expo/*" { const M: any; export = M; }`,
+      `declare module "react-native" {
+        import * as React from "react";
+        export interface ViewStyle { flex?: number; flexDirection?: "row"|"column"|"row-reverse"|"column-reverse"; flexWrap?: "wrap"|"nowrap"; justifyContent?: "flex-start"|"flex-end"|"center"|"space-between"|"space-around"|"space-evenly"; alignItems?: "flex-start"|"flex-end"|"center"|"stretch"|"baseline"; alignSelf?: "auto"|"flex-start"|"flex-end"|"center"|"stretch"|"baseline"; width?: number|string; height?: number|string; minWidth?: number|string; maxWidth?: number|string; minHeight?: number|string; maxHeight?: number|string; margin?: number; marginTop?: number; marginBottom?: number; marginLeft?: number; marginRight?: number; marginHorizontal?: number; marginVertical?: number; padding?: number; paddingTop?: number; paddingBottom?: number; paddingLeft?: number; paddingRight?: number; paddingHorizontal?: number; paddingVertical?: number; backgroundColor?: string; borderRadius?: number; borderTopLeftRadius?: number; borderTopRightRadius?: number; borderBottomLeftRadius?: number; borderBottomRightRadius?: number; borderWidth?: number; borderColor?: string; borderStyle?: "solid"|"dotted"|"dashed"; opacity?: number; overflow?: "visible"|"hidden"|"scroll"; position?: "absolute"|"relative"; top?: number; bottom?: number; left?: number; right?: number; zIndex?: number; shadowColor?: string; shadowOffset?: { width: number; height: number }; shadowOpacity?: number; shadowRadius?: number; elevation?: number; }
+        export interface TextStyle extends ViewStyle { color?: string; fontSize?: number; fontWeight?: "normal"|"bold"|"100"|"200"|"300"|"400"|"500"|"600"|"700"|"800"|"900"; fontStyle?: "normal"|"italic"; fontFamily?: string; lineHeight?: number; textAlign?: "auto"|"left"|"right"|"center"|"justify"; textDecorationLine?: "none"|"underline"|"line-through"|"underline line-through"; letterSpacing?: number; textTransform?: "none"|"uppercase"|"lowercase"|"capitalize"; }
+        export interface ImageStyle extends ViewStyle { resizeMode?: "cover"|"contain"|"stretch"|"repeat"|"center"; }
+        export type StyleProp<T> = T | T[] | null | undefined | false;
+        export interface ViewProps { style?: StyleProp<ViewStyle>; children?: React.ReactNode; testID?: string; onLayout?: (event: any) => void; pointerEvents?: "box-none"|"none"|"box-only"|"auto"; }
+        export interface TextProps { style?: StyleProp<TextStyle>; children?: React.ReactNode; numberOfLines?: number; ellipsizeMode?: "head"|"middle"|"tail"|"clip"; onPress?: () => void; selectable?: boolean; testID?: string; }
+        export interface TextInputProps { style?: StyleProp<TextStyle>; value?: string; defaultValue?: string; placeholder?: string; placeholderTextColor?: string; onChangeText?: (text: string) => void; onSubmitEditing?: (event: any) => void; onFocus?: () => void; onBlur?: () => void; secureTextEntry?: boolean; keyboardType?: "default"|"numeric"|"email-address"|"phone-pad"|"decimal-pad"|"url"; autoCapitalize?: "none"|"sentences"|"words"|"characters"; autoCorrect?: boolean; autoFocus?: boolean; multiline?: boolean; numberOfLines?: number; maxLength?: number; editable?: boolean; returnKeyType?: "done"|"go"|"next"|"search"|"send"; testID?: string; }
+        export interface ImageProps { style?: StyleProp<ImageStyle>; source: { uri: string } | number; resizeMode?: "cover"|"contain"|"stretch"|"repeat"|"center"; onLoad?: () => void; onError?: (error: any) => void; testID?: string; }
+        export interface ScrollViewProps extends ViewProps { horizontal?: boolean; showsHorizontalScrollIndicator?: boolean; showsVerticalScrollIndicator?: boolean; scrollEnabled?: boolean; onScroll?: (event: any) => void; contentContainerStyle?: StyleProp<ViewStyle>; bounces?: boolean; pagingEnabled?: boolean; keyboardShouldPersistTaps?: "always"|"never"|"handled"; }
+        export interface FlatListProps<T> { data: T[] | null; renderItem: (info: { item: T; index: number }) => React.ReactElement | null; keyExtractor?: (item: T, index: number) => string; style?: StyleProp<ViewStyle>; contentContainerStyle?: StyleProp<ViewStyle>; horizontal?: boolean; numColumns?: number; onEndReached?: () => void; onEndReachedThreshold?: number; onRefresh?: () => void; refreshing?: boolean; ListHeaderComponent?: React.ComponentType<any> | React.ReactElement | null; ListFooterComponent?: React.ComponentType<any> | React.ReactElement | null; ListEmptyComponent?: React.ComponentType<any> | React.ReactElement | null; ItemSeparatorComponent?: React.ComponentType<any> | null; showsVerticalScrollIndicator?: boolean; showsHorizontalScrollIndicator?: boolean; }
+        export interface PressableProps { style?: StyleProp<ViewStyle> | ((state: { pressed: boolean }) => StyleProp<ViewStyle>); children?: React.ReactNode | ((state: { pressed: boolean }) => React.ReactNode); onPress?: () => void; onLongPress?: () => void; onPressIn?: () => void; onPressOut?: () => void; disabled?: boolean; testID?: string; }
+        export interface TouchableOpacityProps extends ViewProps { onPress?: () => void; onLongPress?: () => void; activeOpacity?: number; disabled?: boolean; }
+        export interface ModalProps { visible?: boolean; transparent?: boolean; animationType?: "none"|"slide"|"fade"; onRequestClose?: () => void; children?: React.ReactNode; }
+        export interface ActivityIndicatorProps { size?: "small"|"large"|number; color?: string; animating?: boolean; style?: StyleProp<ViewStyle>; }
+        export interface StatusBarProps { barStyle?: "default"|"light-content"|"dark-content"; backgroundColor?: string; hidden?: boolean; translucent?: boolean; }
+        export interface SwitchProps { value?: boolean; onValueChange?: (value: boolean) => void; disabled?: boolean; trackColor?: { false?: string; true?: string }; thumbColor?: string; style?: StyleProp<ViewStyle>; }
+        export const View: React.ComponentType<ViewProps>;
+        export const Text: React.ComponentType<TextProps>;
+        export const TextInput: React.ComponentType<TextInputProps>;
+        export const Image: React.ComponentType<ImageProps>;
+        export const ScrollView: React.ComponentType<ScrollViewProps>;
+        export function FlatList<T = any>(props: FlatListProps<T>): React.ReactElement | null;
+        export const Pressable: React.ComponentType<PressableProps>;
+        export const TouchableOpacity: React.ComponentType<TouchableOpacityProps>;
+        export const SafeAreaView: React.ComponentType<ViewProps>;
+        export const KeyboardAvoidingView: React.ComponentType<ViewProps & { behavior?: "height"|"position"|"padding"; keyboardVerticalOffset?: number; }>;
+        export const Modal: React.ComponentType<ModalProps>;
+        export const ActivityIndicator: React.ComponentType<ActivityIndicatorProps>;
+        export const StatusBar: React.ComponentType<StatusBarProps>;
+        export const Switch: React.ComponentType<SwitchProps>;
+        export const TouchableHighlight: React.ComponentType<TouchableOpacityProps & { underlayColor?: string }>;
+        export const TouchableWithoutFeedback: React.ComponentType<{ onPress?: () => void; children?: React.ReactNode; disabled?: boolean; }>;
+        export const StyleSheet: {
+          create<T extends { [key: string]: ViewStyle | TextStyle | ImageStyle }>(styles: T): T;
+          flatten(style: any): any;
+          hairlineWidth: number;
+          absoluteFill: ViewStyle;
+          absoluteFillObject: ViewStyle;
+        };
+        export const Platform: {
+          OS: "ios" | "android" | "web";
+          Version: number | string;
+          isPad: boolean;
+          isTVOS: boolean;
+          select<T>(specifics: { ios?: T; android?: T; web?: T; default?: T }): T;
+        };
+        export const Dimensions: {
+          get(dim: "window" | "screen"): { width: number; height: number; scale: number; fontScale: number };
+          addEventListener(event: "change", handler: (dims: { window: any; screen: any }) => void): { remove: () => void };
+        };
+        export const Animated: {
+          Value: new (value: number) => any;
+          ValueXY: new (value?: { x: number; y: number }) => any;
+          View: React.ComponentType<ViewProps & { style?: any }>;
+          Text: React.ComponentType<TextProps & { style?: any }>;
+          Image: React.ComponentType<ImageProps & { style?: any }>;
+          ScrollView: React.ComponentType<ScrollViewProps & { style?: any }>;
+          timing(value: any, config: { toValue: number; duration?: number; easing?: any; delay?: number; useNativeDriver?: boolean }): any;
+          spring(value: any, config: { toValue: number; friction?: number; tension?: number; useNativeDriver?: boolean }): any;
+          decay(value: any, config: { velocity: number; deceleration?: number; useNativeDriver?: boolean }): any;
+          sequence(animations: any[]): any;
+          parallel(animations: any[], config?: { stopTogether?: boolean }): any;
+          stagger(time: number, animations: any[]): any;
+          loop(animation: any, config?: { iterations?: number }): any;
+          event(argMapping: any[], config?: any): any;
+        };
+        export const Easing: { linear: (t: number) => number; ease: (t: number) => number; quad: (t: number) => number; cubic: (t: number) => number; in(easing: any): any; out(easing: any): any; inOut(easing: any): any; bezier(x1: number, y1: number, x2: number, y2: number): any; };
+        export const Alert: { alert(title: string, message?: string, buttons?: Array<{ text: string; onPress?: () => void; style?: "default"|"cancel"|"destructive" }>, options?: any): void; };
+        export const Linking: { openURL(url: string): Promise<void>; canOpenURL(url: string): Promise<boolean>; getInitialURL(): Promise<string | null>; addEventListener(type: string, handler: (event: any) => void): void; };
+        export const Keyboard: { dismiss(): void; addListener(event: string, callback: Function): { remove: () => void }; };
+        export const Haptics: any;
+        export function useWindowDimensions(): { width: number; height: number; scale: number; fontScale: number };
+        export function useColorScheme(): "light" | "dark" | null;
+      }
+      declare module "expo-status-bar" { export const StatusBar: any; }
+      declare module "expo-*" { const M: any; export = M; }
+      declare module "@expo/*" { const M: any; export = M; }`,
       "ts:react-native.d.ts"
     );
 

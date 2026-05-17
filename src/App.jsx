@@ -18,6 +18,7 @@ export default function App() {
   const [srcdoc, setSrcdoc] = useState("");
   const [showShare, setShowShare] = useState(false);
   const [extraPackages, setExtraPackages] = useState([]);
+  const [projectName, setProjectName] = useState("runway-project");
   const rootRef = useRef(null);
   const rafRef = useRef(null);
 
@@ -178,6 +179,8 @@ export default function App() {
           files={files}
           fileContents={fileContents}
           onClose={() => setShowShare(false)}
+          projectName={projectName}
+          onRenameProject={setProjectName}
         />
       )}
       <IdeShell
@@ -198,6 +201,8 @@ export default function App() {
         onSave={handleRun}
         onAddPackage={handleAddPackage}
         onRemovePackage={handleRemovePackage}
+        projectName={projectName}
+        onRenameProject={setProjectName}
       />
     </div>
   );
