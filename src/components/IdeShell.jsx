@@ -25,6 +25,10 @@ const IdeShell = memo(function IdeShell({
   onRemovePackage,
   onRenameProject,
   onRenameFile,
+  activeChallenge,
+  testResults,
+  onOpenChallenges,
+  onRunTests,
 }) {
   return (
     <div className="ide-shell">
@@ -82,6 +86,9 @@ const IdeShell = memo(function IdeShell({
           <span className="run-dot" />
           Run
         </button>
+        <button type="button" className="topbar-btn topbar-challenges-btn" onClick={onOpenChallenges}>
+          {activeChallenge ? `✦ ${activeChallenge.title}` : "Challenges"}
+        </button>
         <button type="button" className="topbar-btn" onClick={() => onAction("share")}>
           Share
         </button>
@@ -130,7 +137,13 @@ const IdeShell = memo(function IdeShell({
         />
       </div>
 
-      <IdeBottom logs={logs} onClearLogs={onClearLogs} />
+      <IdeBottom
+        logs={logs}
+        onClearLogs={onClearLogs}
+        activeChallenge={activeChallenge}
+        testResults={testResults}
+        onRunTests={onRunTests}
+      />
 
       <div className="ide-statusbar">
         <span className="statusbar-item">⎇ main</span>

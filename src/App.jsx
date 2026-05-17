@@ -2,7 +2,9 @@ import { useState, useEffect, useCallback, useRef, useMemo } from "react";
 import BootOverlay from "./components/BootOverlay";
 import IdeShell from "./components/IdeShell";
 import ShareModal from "./components/ShareModal";
+import ChallengeModal from "./components/ChallengeModal";
 import { FILES, BOOT_STEPS, LOG_TEMPLATES } from "./data";
+import { CHALLENGES } from "./data/challenges";
 import { generateSrcdoc, detectPackages } from "./utils/livePreview";
 
 export default function App() {
@@ -19,6 +21,10 @@ export default function App() {
   const [showShare, setShowShare] = useState(false);
   const [extraPackages, setExtraPackages] = useState([]);
   const [projectName, setProjectName] = useState("runway-project");
+  const [showChallenges, setShowChallenges] = useState(false);
+  const [challenges, setChallenges] = useState(CHALLENGES);
+  const [activeChallenge, setActiveChallenge] = useState(null);
+  const [testResults, setTestResults] = useState(null);
   const rootRef = useRef(null);
   const rafRef = useRef(null);
 
@@ -139,6 +145,40 @@ export default function App() {
     addLog(`packages: added ${pkg}`, "system");
   }, [addLog]);
 
+  const handleStartChallenge = useCallback((challenge) => {
+    const newFiles = challenge.starterFiles;
+    setFiles(newFiles);
+    setFileContents(Object.fromEntries(newFiles.map((f) => [f.name, f.code])));
+    setActiveFile(newFiles[0].name);
+    setActiveChallenge(challenge);
+    setTestResults(null);
+    setProjectName(challenge.title.toLowerCase().replace(/\s+/g, "-"));
+    setShowChallenges(false);
+    addLog(`challenge: loaded "${challenge.title}"`, "system");
+  }, [addLog]);
+
+  const handleRunTests = useCallback(() => {
+    if (!activeChallenge) return;
+    const allCode = Object.values(fileContents).join("\n");
+    const results = {};
+    let passCount = 0;
+    for (const tc of activeChallenge.testCases) {
+      const pass = (() => { try { return tc.check(allCode); } catch { return false; } })();
+      results[tc.id] = pass ? "pass" : "fail";
+      if (pass) passCount++;
+    }
+    setTestResults(results);
+    const score = activeChallenge.testCases
+      .filter((t) => results[t.id] === "pass")
+      .reduce((s, t) => s + t.points, 0);
+    const max = activeChallenge.testCases.reduce((s, t) => s + t.points, 0);
+    addLog(`tests: ${passCount}/${activeChallenge.testCases.length} passed — ${score}/${max} pts`, passCount === activeChallenge.testCases.length ? "preview" : "trace");
+  }, [activeChallenge, fileContents, addLog]);
+
+  const handleAddChallenge = useCallback((challenge) => {
+    setChallenges((prev) => [...prev, challenge]);
+  }, []);
+
   const handleRenameFile = useCallback((oldName, newName) => {
     if (!newName.trim() || oldName === newName) return;
     setFiles((prev) => prev.map((f) => f.name === oldName ? { ...f, name: newName } : f));
@@ -187,6 +227,14 @@ export default function App() {
     <div ref={rootRef} className={`root-shell${isLoaded ? " is-loaded" : ""}`}>
       <div className="cursor-spotlight" />
       <BootOverlay step={bootStep} progress={bootProgress} />
+      {showChallenges && (
+        <ChallengeModal
+          challenges={challenges}
+          onStart={handleStartChallenge}
+          onClose={() => setShowChallenges(false)}
+          onAddChallenge={handleAddChallenge}
+        />
+      )}
       {showShare && (
         <ShareModal
           files={files}
@@ -217,6 +265,10 @@ export default function App() {
         projectName={projectName}
         onRenameProject={setProjectName}
         onRenameFile={handleRenameFile}
+        activeChallenge={activeChallenge}
+        testResults={testResults}
+        onOpenChallenges={() => setShowChallenges(true)}
+        onRunTests={handleRunTests}
       />
     </div>
   );
