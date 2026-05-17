@@ -29,6 +29,7 @@ const IdeShell = memo(function IdeShell({
   testResults,
   onOpenChallenges,
   onRunTests,
+  editorKey,
 }) {
   return (
     <div className="ide-shell">
@@ -123,6 +124,7 @@ const IdeShell = memo(function IdeShell({
           onRenameFile={onRenameFile}
         />
         <IdeEditor
+          key={editorKey}
           files={files}
           activeFile={activeFile}
           fileContents={fileContents}

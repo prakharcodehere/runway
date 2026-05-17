@@ -25,6 +25,7 @@ export default function App() {
   const [challenges, setChallenges] = useState(CHALLENGES);
   const [activeChallenge, setActiveChallenge] = useState(null);
   const [testResults, setTestResults] = useState(null);
+  const [editorKey, setEditorKey] = useState(0);
   const rootRef = useRef(null);
   const rafRef = useRef(null);
 
@@ -146,15 +147,56 @@ export default function App() {
   }, [addLog]);
 
   const handleStartChallenge = useCallback((challenge) => {
-    const newFiles = challenge.starterFiles;
-    setFiles(newFiles);
-    setFileContents(Object.fromEntries(newFiles.map((f) => [f.name, f.code])));
-    setActiveFile(newFiles[0].name);
+    const reqLines = challenge.requirements.map((r) => `- [ ] ${r}`).join("\n");
+    const testLines = challenge.testCases
+      .map((t) => `| ${t.label} | ${t.points}pts | ${t.group === "practice" ? "best practice" : "functional"} |`)
+      .join("\n");
+    const endpointSection = challenge.endpoint
+      ? `\n## Endpoint\n\`\`\`\n${challenge.endpoint}\n\`\`\`\n` : "";
+
+    const readmeCode = `# ${challenge.title}
+
+**Difficulty:** ${challenge.difficulty.charAt(0).toUpperCase() + challenge.difficulty.slice(1)} · **Time:** ${challenge.timeLimit} min · **Tag:** ${challenge.tag}
+${endpointSection}
+## Requirements
+
+${reqLines}
+
+## Test Cases (${challenge.testCases.reduce((s, t) => s + t.points, 0)} pts)
+
+| Test | Points | Type |
+|------|--------|------|
+${testLines}
+
+## Getting Started
+
+- Click **+** in the sidebar to create \`App.tsx\`
+- Add more files as needed (components/, hooks/, etc.)
+- Press **Run** to see the live preview
+- Click **▶ Run Tests** in the Tests tab to check your progress
+
+> Tip: tests run static analysis on your code — make sure to use the expected
+> component names (FlatList, ActivityIndicator, etc.) and patterns.
+`;
+
+    const challengeFile = {
+      name: "CHALLENGE.md",
+      label: "challenge",
+      accent: "mint",
+      code: readmeCode,
+      previewTitle: challenge.title,
+      previewCopy: "",
+    };
+
+    setFiles([challengeFile]);
+    setFileContents({ "CHALLENGE.md": readmeCode });
+    setActiveFile("CHALLENGE.md");
     setActiveChallenge(challenge);
     setTestResults(null);
     setProjectName(challenge.title.toLowerCase().replace(/\s+/g, "-"));
+    setEditorKey((k) => k + 1); // force Monaco to remount + dispose all cached models
     setShowChallenges(false);
-    addLog(`challenge: loaded "${challenge.title}"`, "system");
+    addLog(`challenge: started "${challenge.title}" — workspace cleared`, "system");
   }, [addLog]);
 
   const handleRunTests = useCallback(() => {
@@ -269,6 +311,7 @@ export default function App() {
         testResults={testResults}
         onOpenChallenges={() => setShowChallenges(true)}
         onRunTests={handleRunTests}
+        editorKey={editorKey}
       />
     </div>
   );
