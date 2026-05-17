@@ -68,24 +68,6 @@ A browser-based React Native IDE — write TypeScript/JSX in Monaco, watch it re
 | **Project export** | Download as `.zip` — unzip and run `npx expo start` instantly |
 | **Session telemetry** | Live log panel showing metro, preview, and runtime events |
 
-## How it works
-
-```
-You type in Monaco
-      ↓  (600ms debounce)
-App.jsx generates an srcdoc string
-      ↓
-iframe re-mounts with the new srcdoc
-      ↓
-@babel/standalone transpiles TSX inside the iframe
-      ↓
-Inline RN→DOM shim maps View/Text/Pressable → div/span
-      ↓
-ReactDOM renders your app inside the phone frame
-```
-
-No external React Native Web CDN. The shim is inlined in every srcdoc so it works fully offline.
-
 ## Stack
 
 - **React 18 + Vite** — host app
