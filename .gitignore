@@ -5,3 +5,5 @@ dist/
 .env
 .env.*
 ARCHITECTURE.md
+IDE_INTERNALS.md
+CHALLENGE_IDEAS.md
