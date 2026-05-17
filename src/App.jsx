@@ -148,49 +148,26 @@ export default function App() {
 
   const handleStartChallenge = useCallback((challenge) => {
     const reqLines = challenge.requirements.map((r) => `- [ ] ${r}`).join("\n");
-    const testLines = challenge.testCases
-      .map((t) => `| ${t.label} | ${t.points}pts | ${t.group === "practice" ? "best practice" : "functional"} |`)
-      .join("\n");
     const endpointSection = challenge.endpoint
       ? `\n## Endpoint\n\`\`\`\n${challenge.endpoint}\n\`\`\`\n` : "";
 
     const readmeCode = `# ${challenge.title}
 
-**Difficulty:** ${challenge.difficulty.charAt(0).toUpperCase() + challenge.difficulty.slice(1)} · **Time:** ${challenge.timeLimit} min · **Tag:** ${challenge.tag}
+**Difficulty:** ${challenge.difficulty.charAt(0).toUpperCase() + challenge.difficulty.slice(1)} · **Time:** ${challenge.timeLimit} min
 ${endpointSection}
 ## Requirements
 
 ${reqLines}
-
-## Test Cases (${challenge.testCases.reduce((s, t) => s + t.points, 0)} pts)
-
-| Test | Points | Type |
-|------|--------|------|
-${testLines}
-
-## Getting Started
-
-- Click **+** in the sidebar to create \`App.tsx\`
-- Add more files as needed (components/, hooks/, etc.)
-- Press **Run** to see the live preview
-- Click **▶ Run Tests** in the Tests tab to check your progress
-
-> Tip: tests run static analysis on your code — make sure to use the expected
-> component names (FlatList, ActivityIndicator, etc.) and patterns.
 `;
 
-    const challengeFile = {
-      name: "CHALLENGE.md",
-      label: "challenge",
-      accent: "mint",
-      code: readmeCode,
-      previewTitle: challenge.title,
-      previewCopy: "",
-    };
+    const appCode = `import { View, Text, StyleSheet } from "react-native";\n\nexport default function App() {\n  return (\n    <View style={styles.container}>\n      <Text style={styles.text}>Start building...</Text>\n    </View>\n  );\n}\n\nconst styles = StyleSheet.create({\n  container: { flex: 1, backgroundColor: "#0f172a", alignItems: "center", justifyContent: "center" },\n  text: { color: "#94a3b8", fontSize: 16 },\n});\n`;
 
-    setFiles([challengeFile]);
-    setFileContents({ "CHALLENGE.md": readmeCode });
-    setActiveFile("CHALLENGE.md");
+    const appFile = { name: "App.tsx", label: "new", accent: "aurora", code: appCode, previewTitle: challenge.title, previewCopy: "" };
+    const mdFile  = { name: "CHALLENGE.md", label: "challenge", accent: "mint", code: readmeCode, previewTitle: "", previewCopy: "" };
+
+    setFiles([appFile, mdFile]);
+    setFileContents({ "App.tsx": appCode, "CHALLENGE.md": readmeCode });
+    setActiveFile("App.tsx");
     setActiveChallenge(challenge);
     setTestResults(null);
     setProjectName(challenge.title.toLowerCase().replace(/\s+/g, "-"));

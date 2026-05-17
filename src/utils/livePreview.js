@@ -235,10 +235,12 @@ export function generateSrcdoc(files, fileContents, extraPackages = []) {
     if(!code)continue;
     var id=name.replace(/\\.(tsx?|jsx?)$/,'');
 
+    // Skip non-code files
     if(name.endsWith('.json')){
       try{ reg[id]=JSON.parse(code); }catch(e){}
       continue;
     }
+    if(name.endsWith('.md')||name.endsWith('.txt')||name.endsWith('.gitkeep')) continue;
 
     var isTSX=name.endsWith('.tsx')||name.endsWith('.jsx');
     var isTS=name.endsWith('.ts')||name.endsWith('.tsx');
