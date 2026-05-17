@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body, #root { height: 100%; background: #07111f; overflow: hidden; }
+    .rnw-root { display: flex; flex-direction: column; height: 100%; background: #07111f; font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; overflow-y: auto; }
+    .rnw-scroll { padding: 24px; display: flex; flex-direction: column; gap: 16px; }
+    .rnw-title { color: #f4efe7; font-size: 30px; font-weight: 700; letter-spacing: -0.5px; }
+    .rnw-sub { color: #87a4c2; font-size: 14px; line-height: 1.6; }
+    .rnw-deck { border-radius: 24px; padding: 18px; background: rgba(11,25,42,0.96); border: 1px solid rgba(124,247,201,0.14); display: flex; flex-direction: column; gap: 12px; }
+    .rnw-deck-title { color: #f4efe7; font-size: 18px; font-weight: 700; }
+    .rnw-deck-sub { color: #93aac3; font-size: 13px; }
+    .rnw-actions { display: flex; gap: 10px; }
+    .rnw-action { flex: 1; min-height: 44px; border-radius: 14px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); display: flex; align-items: center; justify-content: center; cursor: pointer; font-size: 12px; font-weight: 600; transition: background 180ms; }
+    .rnw-action:hover { background: rgba(255,255,255,0.06); }
+    .rnw-card { border-radius: 20px; padding: 16px; background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); display: flex; align-items: center; gap: 14px; }
+    .rnw-card-dot { width: 8px; height: 8px; border-radius: 50%; flex-shrink: 0; }
+    .rnw-card-text { color: #d4dfe9; font-size: 13px; }
+    .status-bar { padding: 12px 24px; display: flex; align-items: center; gap: 8px; border-top: 1px solid rgba(255,255,255,0.06); }
+    .status-dot { width: 7px; height: 7px; border-radius: 50%; background: #7cf7c9; box-shadow: 0 0 10px rgba(124,247,201,0.7); animation: pulse 2s ease-in-out infinite; }
+    .status-text { color: #8b949e; font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase; }
+    @keyframes pulse { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    .reload-hint { position: fixed; top: 12px; right: 12px; padding: 6px 10px; border-radius: 8px; background: rgba(124,247,201,0.15); border: 1px solid rgba(124,247,201,0.3); color: #7cf7c9; font-size: 10px; letter-spacing: 0.1em; text-transform: uppercase; opacity: 0; animation: hint-in 400ms 600ms ease forwards; }
+    @keyframes hint-in { to { opacity: 1; } }
+  </style>
+</head>
+<body>
+  <div class="rnw-root">
+    <div class="rnw-scroll">
+      <div class="rnw-title">FluxDev</div>
+      <div class="rnw-sub">Build mobile ideas in-browser, then push them straight to Expo Go.</div>
+
+      <div class="rnw-deck">
+        <div class="rnw-deck-title">Session live</div>
+        <div class="rnw-deck-sub">Preview runtime synced</div>
+        <div class="rnw-actions">
+          <div class="rnw-action" style="color:#7cf7c9">Run Preview</div>
+          <div class="rnw-action" style="color:#ff9b71">Open Logs</div>
+          <div class="rnw-action" style="color:#86a8ff">Pair Session</div>
+        </div>
+      </div>
+
+      <div class="rnw-card">
+        <div class="rnw-card-dot" style="background:#7cf7c9;box-shadow:0 0 8px rgba(124,247,201,0.6)"></div>
+        <div class="rnw-card-text">Instant React Native Web preview</div>
+      </div>
+      <div class="rnw-card">
+        <div class="rnw-card-dot" style="background:#8ea5ff;box-shadow:0 0 8px rgba(142,165,255,0.6)"></div>
+        <div class="rnw-card-text">Expo phone handoff</div>
+      </div>
+      <div class="rnw-card">
+        <div class="rnw-card-dot" style="background:#ff9b71;box-shadow:0 0 8px rgba(255,155,113,0.6)"></div>
+        <div class="rnw-card-text">Live session telemetry</div>
+      </div>
+    </div>
+
+    <div class="status-bar">
+      <div class="status-dot"></div>
+      <div class="status-text">Preview synced · flux-rn-2048</div>
+    </div>
+  </div>
+  <div class="reload-hint">Live</div>
+
+  <script>
+    window.addEventListener("message", (e) => {
+      if (e.data?.type === "reload") {
+        document.querySelector(".reload-hint").style.opacity = "0";
+        setTimeout(() => { document.querySelector(".reload-hint").style.animation = "none"; document.querySelector(".reload-hint").offsetHeight; document.querySelector(".reload-hint").style.animation = "hint-in 400ms ease forwards"; }, 10);
+      }
+    });
+  </script>
+</body>
+</html>
