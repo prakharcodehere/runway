@@ -192,41 +192,55 @@ export default function ChallengeModal({ challenges, onStart, onClose, onAddChal
           {/* Right: detail */}
           {selected && (
             <div className="challenge-detail-col">
-              <div className="challenge-detail-tag">{selected.tag}</div>
-              <h2 className="challenge-detail-title">{selected.title}</h2>
-              <p className="challenge-detail-desc">{selected.description}</p>
+              <div className="challenge-detail-scrollable">
+                <div className="challenge-detail-tag">{selected.tag}</div>
+                <h2 className="challenge-detail-title">{selected.title}</h2>
+                <p className="challenge-detail-desc">{selected.description}</p>
 
-              {selected.endpoint && (
-                <div className="challenge-endpoint">
-                  <span className="challenge-endpoint-label">Endpoint</span>
-                  <code>{selected.endpoint}</code>
-                </div>
-              )}
-
-              <div className="challenge-section-label">Requirements</div>
-              <ul className="challenge-req-list">
-                {selected.requirements.map((r, i) => (
-                  <li key={i} className="challenge-req-item">
-                    <span className="challenge-req-dot" />
-                    {r}
-                  </li>
-                ))}
-              </ul>
-
-              <div className="challenge-section-label">Test cases <span className="challenge-points-total">({selected.testCases.reduce((s, t) => s + t.points, 0)} pts)</span></div>
-              <div className="challenge-test-list">
-                {selected.testCases.map((t) => (
-                  <div key={t.id} className="challenge-test-item">
-                    <span className="challenge-test-dot" />
-                    <span>{t.label}</span>
-                    <span className="challenge-test-pts">{t.points}pts</span>
+                {selected.endpoint && (
+                  <div className="challenge-endpoint">
+                    <span className="challenge-endpoint-label">Endpoint</span>
+                    <code>{selected.endpoint}</code>
                   </div>
-                ))}
+                )}
+
+                <div className="challenge-section-label">Requirements</div>
+                <ul className="challenge-req-list">
+                  {selected.requirements.map((r, i) => (
+                    <li key={i} className="challenge-req-item">
+                      <span className="challenge-req-dot" />
+                      {r}
+                    </li>
+                  ))}
+                </ul>
+
+                <div className="challenge-section-label">
+                  Test cases <span className="challenge-points-total">({selected.testCases.reduce((s, t) => s + t.points, 0)} pts)</span>
+                </div>
+                <div className="challenge-test-list">
+                  {selected.testCases.map((t) => (
+                    <div key={t.id} className={`challenge-test-item${t.group === "practice" ? " test-item-practice" : ""}`}>
+                      <span className="challenge-test-dot" />
+                      <span>{t.label}</span>
+                      {t.group === "practice" && <span className="challenge-test-tag">best practice</span>}
+                      <span className="challenge-test-pts">{t.points}pts</span>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              <button type="button" className="challenge-start-btn" onClick={() => onStart(selected)}>
-                Start Challenge →
-              </button>
+              <div className="challenge-detail-footer">
+                <div className="challenge-footer-meta">
+                  <span className="challenge-diff-badge" style={{ color: DIFF_COLOR[selected.difficulty] }}>{selected.difficulty}</span>
+                  <span style={{ color: "var(--muted)", fontSize: "0.78rem" }}>·</span>
+                  <span style={{ color: "var(--muted)", fontSize: "0.78rem" }}>{selected.timeLimit} min</span>
+                  <span style={{ color: "var(--muted)", fontSize: "0.78rem" }}>·</span>
+                  <span style={{ color: "var(--muted)", fontSize: "0.78rem" }}>{selected.testCases.length} tests</span>
+                </div>
+                <button type="button" className="challenge-start-btn" onClick={() => onStart(selected)}>
+                  Start Challenge →
+                </button>
+              </div>
             </div>
           )}
         </div>
