@@ -24,6 +24,7 @@ const IdeShell = memo(function IdeShell({
   onAddPackage,
   onRemovePackage,
   onRenameProject,
+  onRenameFile,
 }) {
   return (
     <div className="ide-shell">
@@ -112,6 +113,7 @@ const IdeShell = memo(function IdeShell({
           onRemovePackage={onRemovePackage}
           projectName={projectName}
           onRenameProject={onRenameProject}
+          onRenameFile={onRenameFile}
         />
         <IdeEditor
           files={files}

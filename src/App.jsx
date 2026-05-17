@@ -139,6 +139,19 @@ export default function App() {
     addLog(`packages: added ${pkg}`, "system");
   }, [addLog]);
 
+  const handleRenameFile = useCallback((oldName, newName) => {
+    if (!newName.trim() || oldName === newName) return;
+    setFiles((prev) => prev.map((f) => f.name === oldName ? { ...f, name: newName } : f));
+    setFileContents((prev) => {
+      const next = { ...prev };
+      next[newName] = next[oldName];
+      delete next[oldName];
+      return next;
+    });
+    setActiveFile((prev) => prev === oldName ? newName : prev);
+    addLog(`editor: renamed ${oldName} → ${newName}`, "editor");
+  }, [addLog]);
+
   const handleRemovePackage = useCallback((name) => {
     setExtraPackages((prev) => prev.filter((p) => p !== name));
     addLog(`packages: removed ${name}`, "trace");
@@ -203,6 +216,7 @@ export default function App() {
         onRemovePackage={handleRemovePackage}
         projectName={projectName}
         onRenameProject={setProjectName}
+        onRenameFile={handleRenameFile}
       />
     </div>
   );

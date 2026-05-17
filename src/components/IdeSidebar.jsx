@@ -4,7 +4,7 @@ export default function IdeSidebar({
   files, activeFile, onFileSelect, onNewFile,
   detectedPackages = [], extraPackages = [],
   onAddPackage, onRemovePackage,
-  projectName, onRenameProject,
+  projectName, onRenameProject, onRenameFile,
 }) {
   // "idle" | "picking" | "file" | "folder"
   const [mode, setMode] = useState("idle");
@@ -160,6 +160,7 @@ export default function IdeSidebar({
           indent={1}
           isActive={file.name === activeFile}
           onSelect={onFileSelect}
+          onRename={onRenameFile}
         />
       ))}
 
@@ -179,6 +180,7 @@ export default function IdeSidebar({
                 indent={2}
                 isActive={file.name === activeFile}
                 onSelect={onFileSelect}
+                onRename={onRenameFile}
               />
             ))}
           </div>
@@ -260,14 +262,52 @@ export default function IdeSidebar({
   );
 }
 
-function TreeItem({ file, indent, isActive, onSelect }) {
+function TreeItem({ file, indent, isActive, onSelect, onRename }) {
+  const [editing, setEditing] = useState(false);
   const shortName = file.name.split("/").at(-1);
+  const folder = file.name.includes("/") ? file.name.split("/").slice(0, -1).join("/") : null;
+  const [inputVal, setInputVal] = useState(shortName);
+  const inputRef = useRef(null);
+
+  useEffect(() => { if (editing) inputRef.current?.focus(); }, [editing]);
+
+  const commit = useCallback(() => {
+    const trimmed = inputVal.trim();
+    if (trimmed && trimmed !== shortName) {
+      const newName = folder ? `${folder}/${trimmed}` : trimmed;
+      onRename(file.name, newName);
+    }
+    setEditing(false);
+  }, [inputVal, shortName, folder, file.name, onRename]);
+
+  if (editing) {
+    return (
+      <div className="tree-item tree-item-editing" style={{ paddingLeft: 8 + indent * 10 }}>
+        <span className={`tree-dot ${file.accent}`} />
+        <input
+          ref={inputRef}
+          type="text"
+          className="tree-rename-input"
+          value={inputVal}
+          onChange={(e) => setInputVal(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") commit();
+            if (e.key === "Escape") setEditing(false);
+          }}
+          onBlur={commit}
+          onClick={(e) => e.stopPropagation()}
+        />
+      </div>
+    );
+  }
+
   return (
     <button
       type="button"
       className={`tree-item${isActive ? " is-active" : ""}`}
       style={{ paddingLeft: 8 + indent * 10 }}
       onClick={() => onSelect(file.name)}
+      onDoubleClick={(e) => { e.preventDefault(); setInputVal(shortName); setEditing(true); }}
     >
       <span className={`tree-dot ${file.accent}`} />
       <span className="tree-name">{shortName}</span>
