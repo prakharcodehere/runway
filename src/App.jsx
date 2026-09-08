@@ -118,6 +118,33 @@ export default function App() {
       if (e.data?.type === "runway-runtime-error") {
         addLog(`preview: runtime error — ${e.data.message}`, "trace");
       }
+      if (e.data?.type === "runway-storage-req") {
+        // The preview iframe is sandboxed without allow-same-origin, so its own
+        // localStorage throws — relay AsyncStorage calls to this window's real
+        // storage instead, namespaced so it can't collide with app state.
+        const { id, op, args } = e.data;
+        const prefix = "runway:asyncstorage:";
+        let value = null;
+        try {
+          if (op === "getItem") value = localStorage.getItem(prefix + args[0]);
+          else if (op === "setItem") localStorage.setItem(prefix + args[0], args[1]);
+          else if (op === "removeItem") localStorage.removeItem(prefix + args[0]);
+          else if (op === "clear") {
+            Object.keys(localStorage).filter((k) => k.startsWith(prefix)).forEach((k) => localStorage.removeItem(k));
+          } else if (op === "getAllKeys") {
+            value = Object.keys(localStorage).filter((k) => k.startsWith(prefix)).map((k) => k.slice(prefix.length));
+          } else if (op === "multiGet") {
+            value = args[0].map((k) => [k, localStorage.getItem(prefix + k)]);
+          } else if (op === "multiSet") {
+            args[0].forEach(([k, v]) => localStorage.setItem(prefix + k, v));
+          } else if (op === "multiRemove") {
+            args[0].forEach((k) => localStorage.removeItem(prefix + k));
+          }
+        } catch {
+          value = null;
+        }
+        e.source?.postMessage({ type: "runway-storage-res", id, value }, "*");
+      }
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);

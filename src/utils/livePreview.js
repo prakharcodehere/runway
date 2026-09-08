@@ -89,6 +89,7 @@ const RN_SHIM = `
   function useSafeAreaFrame() { return { x:0, y:0, width:window.innerWidth, height:window.innerHeight }; }
   var SafeAreaInsetsContext = R.createContext(SAFE_AREA_INSETS);
   window.ReactNativeSafeArea = {
+    __esModule:true,
     SafeAreaProvider:SafeAreaProvider, SafeAreaView:ContextSafeAreaView,
     useSafeAreaInsets:useSafeAreaInsets, useSafeAreaFrame:useSafeAreaFrame,
     SafeAreaInsetsContext:SafeAreaInsetsContext,
@@ -111,6 +112,7 @@ const RN_SHIM = `
   var Easing = { linear:function(t){return t;}, ease:function(t){return t;}, bezier:function(){return function(t){return t;};}, in:function(e){return e;}, out:function(e){return e;}, inOut:function(e){return e;} };
 
   window.ReactNativeWeb = {
+    __esModule:true, default:{},
     View:View, Text:Text, ScrollView:ScrollView, FlatList:FlatList,
     SafeAreaView:SafeAreaView, Pressable:Pressable,
     TouchableOpacity:TouchableOpacity, TouchableHighlight:TouchableOpacity,
@@ -123,6 +125,67 @@ const RN_SHIM = `
     useColorScheme:function(){ return 'dark'; },
     Alert:{ alert:function(t,m,b){ window.alert(t+(m?'\\n'+m:'')); if(b&&b[0]&&b[0].onPress)b[0].onPress(); } },
     Linking:{ openURL:function(u){ window.open(u,'_blank'); }, canOpenURL:function(){ return Promise.resolve(true); } },
+  };
+
+  // ── @react-native-async-storage/async-storage shim ──────
+  // The preview iframe is sandboxed WITHOUT allow-same-origin (so candidate
+  // code can't reach the parent app's storage/cookies), which means the
+  // iframe's own window.localStorage throws a SecurityError. Relay each call
+  // to the parent via postMessage instead — the parent has real storage and
+  // replies with the result, so data still survives the iframe remounting
+  // on every keystroke (unlike an in-iframe in-memory fallback would).
+  var __storageSeq = 0;
+  var __storagePending = {};
+  window.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'runway-storage-res' && __storagePending[e.data.id]) {
+      __storagePending[e.data.id](e.data.value);
+      delete __storagePending[e.data.id];
+    }
+  });
+  function storageCall(op, args) {
+    return new Promise(function(resolve) {
+      var id = ++__storageSeq;
+      __storagePending[id] = resolve;
+      window.parent.postMessage({ type:'runway-storage-req', id:id, op:op, args:args }, '*');
+    });
+  }
+  window.AsyncStorageShim = {
+    getItem:function(k){ return storageCall('getItem', [k]); },
+    setItem:function(k,v){ return storageCall('setItem', [k, v]); },
+    removeItem:function(k){ return storageCall('removeItem', [k]); },
+    clear:function(){ return storageCall('clear', []); },
+    getAllKeys:function(){ return storageCall('getAllKeys', []); },
+    multiGet:function(keys){ return storageCall('multiGet', [keys]); },
+    multiSet:function(pairs){ return storageCall('multiSet', [pairs]); },
+    multiRemove:function(keys){ return storageCall('multiRemove', [keys]); },
+  };
+
+  // ── @expo/vector-icons shim — icon fonts can't load in-preview, so render
+  // a sized placeholder glyph that still respects size/color/layout props.
+  function makeIconSet() {
+    return function Icon(p) {
+      var size = p.size || 24;
+      return h('span', { title:p.name, style:{ display:'inline-flex', alignItems:'center', justifyContent:'center', width:size, height:size, color:p.color||'currentColor', fontSize:Math.round(size*0.55), lineHeight:1, flexShrink:0 } }, '●');
+    };
+  }
+  var iconSetNames = ['Ionicons','MaterialIcons','MaterialCommunityIcons','FontAwesome','FontAwesome5','FontAwesome6','AntDesign','Feather','Entypo','EvilIcons','Fontisto','Foundation','Octicons','SimpleLineIcons','Zocial'];
+  window.ExpoVectorIcons = { __esModule:true };
+  iconSetNames.forEach(function(nm){ window.ExpoVectorIcons[nm] = makeIconSet(); });
+  window.ExpoVectorIcons.default = window.ExpoVectorIcons;
+
+  // ── react-native-svg shim — maps straight onto native SVG elements, which
+  // accept the same camelCase prop names RN's svg lib uses (fill, strokeWidth…).
+  function svgEl(tag) {
+    return function(p) { return h(tag, p, p.children); };
+  }
+  window.ReactNativeSvg = {
+    __esModule:true,
+    default:svgEl('svg'), Svg:svgEl('svg'), Circle:svgEl('circle'), Rect:svgEl('rect'),
+    Path:svgEl('path'), Line:svgEl('line'), Polygon:svgEl('polygon'), Polyline:svgEl('polyline'),
+    Ellipse:svgEl('ellipse'), G:svgEl('g'), Text:svgEl('text'), TSpan:svgEl('tspan'),
+    Defs:svgEl('defs'), LinearGradient:svgEl('linearGradient'), RadialGradient:svgEl('radialGradient'),
+    Stop:svgEl('stop'), ClipPath:svgEl('clipPath'), Mask:svgEl('mask'), Use:svgEl('use'),
+    Symbol:svgEl('symbol'), Image:svgEl('image'),
   };
 
   var style = document.createElement('style');
@@ -138,6 +201,8 @@ const BUILTIN_PKGS = new Set([
   'expo-status-bar', 'expo-constants', 'expo-font',
   'expo-linear-gradient', 'expo-blur', 'expo-haptics',
   'react-native-safe-area-context',
+  '@react-native-async-storage/async-storage',
+  'react-native-svg',
 ]);
 
 function isBuiltinPkg(name) {
@@ -196,36 +261,73 @@ export function generateSrcdoc(files, fileContents, extraPackages = []) {
 </head>
 <body>
 <div id="root"></div>
-<script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
-<script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
-<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
+<script crossorigin="anonymous" src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+<script crossorigin="anonymous" src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script crossorigin="anonymous" src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
 <script>${RN_SHIM}</script>
 <script>
+// Show errors in a standalone overlay, NEVER by touching #root's innerHTML —
+// React keeps owning and diffing #root after the first successful mount, so
+// clobbering it out from under React causes a follow-up "Failed to execute
+// removeChild" crash the next time React tries to reconcile that subtree.
+window.__runwayShowError = function(title, message) {
+  var el = document.getElementById('runway-err-overlay');
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'runway-err-overlay';
+    el.className = 'err';
+    el.style.position = 'fixed';
+    el.style.inset = '0';
+    el.style.zIndex = '2147483647';
+    document.body.appendChild(el);
+  }
+  el.style.display = 'block';
+  el.innerHTML = '<b style="color:#ff9b71">' + title + '</b>\\n' + message;
+};
+
 // Catch errors thrown after the initial render (event handlers, effects,
 // timers, rejected promises) — without this the preview just goes blank
 // with no feedback when a candidate's code throws asynchronously.
 window.addEventListener('error', function(e){
-  var root=document.getElementById('root');
-  if(root) root.innerHTML='<div class="err"><b style="color:#ff9b71">Runtime error</b>\\n'+(e.error&&e.error.message||e.message)+'</div>';
-  window.parent.postMessage({ type:'runway-runtime-error', message:(e.error&&e.error.message||e.message) }, '*');
+  var message = (e.error&&e.error.message) || e.message;
+  window.__runwayShowError('Runtime error', message);
+  window.parent.postMessage({ type:'runway-runtime-error', message:message }, '*');
 });
 window.addEventListener('unhandledrejection', function(e){
-  var root=document.getElementById('root');
-  var message=(e.reason&&e.reason.message)||String(e.reason);
-  if(root) root.innerHTML='<div class="err"><b style="color:#ff9b71">Unhandled promise rejection</b>\\n'+message+'</div>';
+  var message = (e.reason&&e.reason.message) || String(e.reason);
+  window.__runwayShowError('Unhandled promise rejection', message);
   window.parent.postMessage({ type:'runway-runtime-error', message:message }, '*');
 });
 </script>
 <script type="module">
 (async function(){
   if(typeof Babel==='undefined'){
-    document.getElementById('root').innerHTML='<div class="err">Babel failed to load — check network</div>';
+    window.__runwayShowError('', 'Babel failed to load — check network');
     return;
   }
 
   // ── Load npm packages from esm.sh ──────────────────────
   var __pkgs = {};
   var pkgNames = ${allPackagesJson};
+
+  // A package that genuinely can't run in-browser (native-only, wrong entry
+  // point, network hiccup…) shouldn't crash the whole preview. Any property
+  // pulled off this stub resolves to an inert component/no-op function, so
+  // "const { X } = require(pkg)" and "<X/>" degrade to a visible placeholder
+  // instead of "Cannot read properties of undefined" or a blank white screen.
+  function fallbackPkgStub(name) {
+    var Stub = function() {
+      return React.createElement('span', { style:{ display:'inline-block', padding:'2px 5px', fontSize:10, color:'#f87171', border:'1px dashed #f87171', borderRadius:4 } }, '⚠ ' + name + ' unavailable');
+    };
+    var target = { default:Stub, __esModule:true };
+    return new Proxy(target, {
+      get: function(t, prop) {
+        if (prop in t) return t[prop];
+        if (typeof prop === 'symbol' || prop === 'then') return undefined;
+        return Stub;
+      }
+    });
+  }
 
   if (pkgNames.length > 0) {
     await Promise.all(pkgNames.map(async function(name) {
@@ -246,6 +348,7 @@ window.addEventListener('unhandledrejection', function(e){
         __pkgs[name] = combined;
         window.parent.postMessage({ type:'runway-pkg', status:'loaded', name:name }, '*');
       } catch(e) {
+        __pkgs[name] = fallbackPkgStub(name);
         window.parent.postMessage({ type:'runway-pkg', status:'error', name:name, error:e.message }, '*');
       }
     }));
@@ -260,9 +363,12 @@ window.addEventListener('unhandledrejection', function(e){
     if (dep==='react'||dep==='React') return React;
     if (dep==='react-dom') return ReactDOM;
     if (dep==='react-native'||dep==='react-native-web') return ReactNativeWeb;
-    if (dep==='expo-status-bar') return { StatusBar: ReactNativeWeb.StatusBar };
+    if (dep==='expo-status-bar') return { StatusBar: ReactNativeWeb.StatusBar, __esModule:true };
     if (dep==='react-native-safe-area-context') return window.ReactNativeSafeArea;
-    if (dep.startsWith('expo-')||dep.startsWith('@expo/')) return { default:{}, StatusBar:function(){return null;} };
+    if (dep==='@react-native-async-storage/async-storage') return { default: window.AsyncStorageShim, __esModule:true };
+    if (dep==='react-native-svg') return window.ReactNativeSvg;
+    if (dep==='@expo/vector-icons') return window.ExpoVectorIcons;
+    if (dep.startsWith('expo-')||dep.startsWith('@expo/')) return { default:{}, StatusBar:function(){return null;}, __esModule:true };
     // npm package loaded from esm.sh
     if (__pkgs[dep] !== undefined) return __pkgs[dep];
     // Relative file import
@@ -311,21 +417,21 @@ window.addEventListener('unhandledrejection', function(e){
 
   var root=document.getElementById('root');
   if(errors.length>0){
-    root.innerHTML='<div class="err"><b style="color:#ff9b71">Compile error</b>\\n\\n'+errors.join('\\n\\n')+'</div>';
+    window.__runwayShowError('Compile error', errors.join('\\n\\n'));
     return;
   }
 
   var AppMod=reg['App']||{};
   var App=AppMod.default||AppMod.App;
   if(!App){
-    root.innerHTML='<div class="err">No default export found in App.tsx</div>';
+    window.__runwayShowError('', 'No default export found in App.tsx');
     return;
   }
 
   try{
     ReactDOM.createRoot(root).render(React.createElement(App));
   }catch(e){
-    root.innerHTML='<div class="err"><b style="color:#ff9b71">Runtime error</b>\\n'+e.message+'</div>';
+    window.__runwayShowError('Runtime error', e.message);
   }
 })();
 </script>
