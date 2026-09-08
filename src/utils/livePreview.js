@@ -70,6 +70,31 @@ const RN_SHIM = `
   function KeyboardAvoidingView(p) { return h(View, p, p.children); }
   function Modal(p) { return p.visible ? h('div', { style:{ position:'fixed', inset:0, zIndex:9999, background:'rgba(0,0,0,0.5)', display:'flex', alignItems:'center', justifyContent:'center' }}, p.children) : null; }
 
+  // ── react-native-safe-area-context shim ─────────────────
+  // Fixed insets approximating a notched phone so SafeAreaView content
+  // doesn't render underneath the mock status bar / dynamic island overlay.
+  var SAFE_AREA_INSETS = { top:47, right:0, bottom:20, left:0 };
+  function SafeAreaProvider(p) { return h(View, { style:{ flex:1 } }, p.children); }
+  function ContextSafeAreaView(p) {
+    var edges = p.edges || ['top','right','bottom','left'];
+    var pad = {};
+    if (edges.indexOf('top') !== -1) pad.paddingTop = SAFE_AREA_INSETS.top;
+    if (edges.indexOf('bottom') !== -1) pad.paddingBottom = SAFE_AREA_INSETS.bottom;
+    if (edges.indexOf('left') !== -1) pad.paddingLeft = SAFE_AREA_INSETS.left;
+    if (edges.indexOf('right') !== -1) pad.paddingRight = SAFE_AREA_INSETS.right;
+    var st = s(Object.assign({ display:'flex', flexDirection:'column', flex:1, boxSizing:'border-box' }, pad), p.style);
+    return h('div', { style:st }, p.children);
+  }
+  function useSafeAreaInsets() { return SAFE_AREA_INSETS; }
+  function useSafeAreaFrame() { return { x:0, y:0, width:window.innerWidth, height:window.innerHeight }; }
+  var SafeAreaInsetsContext = R.createContext(SAFE_AREA_INSETS);
+  window.ReactNativeSafeArea = {
+    SafeAreaProvider:SafeAreaProvider, SafeAreaView:ContextSafeAreaView,
+    useSafeAreaInsets:useSafeAreaInsets, useSafeAreaFrame:useSafeAreaFrame,
+    SafeAreaInsetsContext:SafeAreaInsetsContext,
+    initialWindowMetrics:{ insets:SAFE_AREA_INSETS, frame:{ x:0, y:0, width:window.innerWidth, height:window.innerHeight } },
+  };
+
   var StyleSheet = { create:function(s){ return s; }, flatten:function(s){ return Object.assign.apply(Object,[{}].concat(Array.isArray(s)?s:[s])); }, hairlineWidth:1 };
   var Platform = { OS:'web', Version:1, select:function(o){ return o.web||o.default||o.ios||o.android; } };
   var Dimensions = { get:function(dim){ return dim==='window'||dim==='screen'?{ width:window.innerWidth, height:window.innerHeight, scale:1, fontScale:1 }:{}; }, addEventListener:function(){ return { remove:function(){} }; } };
@@ -112,7 +137,12 @@ const BUILTIN_PKGS = new Set([
   'react-native', 'react-native-web',
   'expo-status-bar', 'expo-constants', 'expo-font',
   'expo-linear-gradient', 'expo-blur', 'expo-haptics',
+  'react-native-safe-area-context',
 ]);
+
+function isBuiltinPkg(name) {
+  return BUILTIN_PKGS.has(name) || name.startsWith('expo-') || name.startsWith('@expo/');
+}
 
 export function detectPackages(fileContents) {
   const found = new Set();
@@ -126,7 +156,7 @@ export function detectPackages(fileContents) {
       const name = raw.startsWith('@')
         ? raw.split('/').slice(0, 2).join('/')
         : raw.split('/')[0];
-      if (!BUILTIN_PKGS.has(name) && !name.startsWith('expo-') && !name.startsWith('@expo/')) {
+      if (!isBuiltinPkg(name)) {
         found.add(name);
       }
     }
@@ -143,7 +173,10 @@ export function generateSrcdoc(files, fileContents, extraPackages = []) {
   }
 
   const autoPackages = detectPackages(fileContents);
-  const allPackages = [...new Set([...autoPackages, ...extraPackages])];
+  // extraPackages come from manual "add package" input, which isn't checked
+  // against the built-in list — filter here too so a manually-added
+  // react-native-safe-area-context (etc.) doesn't get fetched from esm.sh.
+  const allPackages = [...new Set([...autoPackages, ...extraPackages])].filter((p) => !isBuiltinPkg(p));
 
   const fileMapJson = JSON.stringify(fileMap);
   const allPackagesJson = JSON.stringify(allPackages);
@@ -228,6 +261,7 @@ window.addEventListener('unhandledrejection', function(e){
     if (dep==='react-dom') return ReactDOM;
     if (dep==='react-native'||dep==='react-native-web') return ReactNativeWeb;
     if (dep==='expo-status-bar') return { StatusBar: ReactNativeWeb.StatusBar };
+    if (dep==='react-native-safe-area-context') return window.ReactNativeSafeArea;
     if (dep.startsWith('expo-')||dep.startsWith('@expo/')) return { default:{}, StatusBar:function(){return null;} };
     // npm package loaded from esm.sh
     if (__pkgs[dep] !== undefined) return __pkgs[dep];
