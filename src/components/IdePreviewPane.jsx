@@ -1,6 +1,26 @@
 import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { PREVIEW_PRESETS } from "../data";
 
+// Rounded-rect path in a shared 300×620 coordinate space (matches the
+// .device-frame aspect-ratio, so the SVG shell scales without distortion).
+function roundedRectPath(x, y, w, h, r) {
+  return `M${x + r},${y} H${x + w - r} A${r},${r} 0 0 1 ${x + w},${y + r} V${y + h - r} A${r},${r} 0 0 1 ${x + w - r},${y + h} H${x + r} A${r},${r} 0 0 1 ${x},${y + h - r} V${y + r} A${r},${r} 0 0 1 ${x + r},${y} Z`;
+}
+
+const SHELL_OUTER = { x: 2, y: 2, w: 296, h: 616, r: 50 };
+const SHELL_RING = 8;
+const SHELL_INNER = {
+  x: SHELL_OUTER.x + SHELL_RING,
+  y: SHELL_OUTER.y + SHELL_RING,
+  w: SHELL_OUTER.w - SHELL_RING * 2,
+  h: SHELL_OUTER.h - SHELL_RING * 2,
+  r: SHELL_OUTER.r - SHELL_RING,
+};
+const SHELL_OUTER_PATH = roundedRectPath(SHELL_OUTER.x, SHELL_OUTER.y, SHELL_OUTER.w, SHELL_OUTER.h, SHELL_OUTER.r);
+// Bezel ring = outer rounded rect minus inner cutout, combined via evenodd —
+// the cutout is where the HTML screen overlay sits, so the two stay concentric.
+const SHELL_RING_PATH = `${SHELL_OUTER_PATH} ${roundedRectPath(SHELL_INNER.x, SHELL_INNER.y, SHELL_INNER.w, SHELL_INNER.h, SHELL_INNER.r)}`;
+
 function buildQrCells() {
   const size = 21;
   const cells = [];
@@ -86,37 +106,44 @@ export default function IdePreviewPane({ fileData: file, srcdoc, onRun }) {
                 aria-hidden="true"
               >
                 <defs>
-                  <linearGradient id="shellBody" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stopColor="#5a5c62" />
-                    <stop offset="10%" stopColor="#302f33" />
-                    <stop offset="32%" stopColor="#1a1b1d" />
-                    <stop offset="55%" stopColor="#101011" />
-                    <stop offset="80%" stopColor="#18191b" />
-                    <stop offset="100%" stopColor="#3a3b3f" />
+                  {/* Light from above — bright rim at top, dark mid-body, faint bottom bounce */}
+                  <linearGradient id="shellBody" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#7d7f85" />
+                    <stop offset="6%" stopColor="#48494e" />
+                    <stop offset="18%" stopColor="#232427" />
+                    <stop offset="40%" stopColor="#151516" />
+                    <stop offset="65%" stopColor="#1a1b1d" />
+                    <stop offset="88%" stopColor="#2e2f33" />
+                    <stop offset="100%" stopColor="#4c4d53" />
                   </linearGradient>
-                  <linearGradient id="shellEdge" x1="0" y1="0" x2="1" y2="1">
-                    <stop offset="0%" stopColor="#7a7c82" />
-                    <stop offset="45%" stopColor="#232427" />
-                    <stop offset="100%" stopColor="#050506" />
+                  <linearGradient id="shellEdge" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="0%" stopColor="#a6a8ae" />
+                    <stop offset="30%" stopColor="#3a3b3f" />
+                    <stop offset="70%" stopColor="#0e0e0f" />
+                    <stop offset="100%" stopColor="#38393d" />
                   </linearGradient>
-                  <radialGradient id="shellSpecular" cx="35%" cy="0%" r="60%">
-                    <stop offset="0%" stopColor="rgba(255,255,255,0.16)" />
+                  {/* Soft highlight following the ring — screen-blended so it reads
+                      as a light catch rather than a flat wash */}
+                  <radialGradient id="shellSpecular" cx="32%" cy="4%" r="55%">
+                    <stop offset="0%" stopColor="rgba(255,255,255,0.28)" />
                     <stop offset="100%" stopColor="rgba(255,255,255,0)" />
                   </radialGradient>
                   <linearGradient id="btnFill" x1="0" y1="0" x2="1" y2="0">
                     <stop offset="0%" stopColor="#0a0a0b" />
-                    <stop offset="50%" stopColor="#404247" />
+                    <stop offset="50%" stopColor="#4a4c51" />
                     <stop offset="100%" stopColor="#0a0a0b" />
                   </linearGradient>
                 </defs>
 
-                {/* Body + chamfer edge */}
-                <rect x="2" y="2" width="296" height="616" rx="50" fill="url(#shellBody)" stroke="url(#shellEdge)" strokeWidth="2.5" />
-                {/* Top specular sheen */}
-                <rect x="2" y="2" width="296" height="616" rx="50" fill="url(#shellSpecular)" />
-                {/* Antenna cutlines */}
-                <rect x="2" y="358" width="296" height="1" fill="rgba(0,0,0,0.55)" />
-                <rect x="2" y="360" width="296" height="0.75" fill="rgba(255,255,255,0.05)" />
+                {/* Bezel ring — outer shell minus the screen cutout, kept perfectly
+                    concentric with the HTML screen overlay via shared geometry */}
+                <path d={SHELL_RING_PATH} fillRule="evenodd" fill="url(#shellBody)" />
+                <path d={SHELL_RING_PATH} fillRule="evenodd" fill="url(#shellSpecular)" style={{ mixBlendMode: "screen" }} />
+                <path d={SHELL_OUTER_PATH} fill="none" stroke="url(#shellEdge)" strokeWidth="1.5" />
+
+                {/* Antenna cutlines, confined to the ring so they don't cross the screen */}
+                <rect x={SHELL_OUTER.x} y="358" width={SHELL_RING} height="1" fill="rgba(0,0,0,0.5)" />
+                <rect x={SHELL_OUTER.x + SHELL_OUTER.w - SHELL_RING} y="358" width={SHELL_RING} height="1" fill="rgba(0,0,0,0.5)" />
 
                 {/* Side buttons — protrude slightly past the body edge */}
                 <rect x="-3" y="128" width="4" height="48" rx="1.5" fill="url(#btnFill)" />

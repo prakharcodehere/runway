@@ -1127,10 +1127,13 @@ h1, h2, h3, h4, h5 { margin: 0; }
 /* ── Screen — an HTML overlay, not a separate bezel-colored box, so the
    status bar / island share the exact same background as the app content
    underneath instead of showing a seam of gray metal behind them. ── */
+/* Inset/radius computed to exactly match the SVG shell's ring cutout
+   (SHELL_RING=8 in the 300×620 space) so the screen and bezel stay concentric
+   with no visible seam or mismatched curve at the corners. */
 .device-screen {
   position: absolute;
-  inset: 3.1% 3.6%;
-  border-radius: 15%/6.9%;
+  inset: 1.29% 2.667%;
+  border-radius: 14.79% / 6.95%;
   overflow: hidden;
   background: #05070c;
   box-shadow:
