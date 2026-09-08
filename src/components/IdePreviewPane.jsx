@@ -77,15 +77,57 @@ export default function IdePreviewPane({ fileData: file, srcdoc, onRun }) {
               </button>
             </div>
 
-            {/* Realistic phone frame */}
+            {/* Realistic phone frame — SVG titanium shell + HTML screen overlay */}
             <div className={`device-frame device-${preset}`}>
-              {/* Side buttons */}
-              <div className="device-btn-vol-up" />
-              <div className="device-btn-vol-dn" />
-              <div className="device-btn-power" />
+              <svg
+                className="device-shell-svg"
+                viewBox="0 0 300 620"
+                preserveAspectRatio="none"
+                aria-hidden="true"
+              >
+                <defs>
+                  <linearGradient id="shellBody" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#5a5c62" />
+                    <stop offset="10%" stopColor="#302f33" />
+                    <stop offset="32%" stopColor="#1a1b1d" />
+                    <stop offset="55%" stopColor="#101011" />
+                    <stop offset="80%" stopColor="#18191b" />
+                    <stop offset="100%" stopColor="#3a3b3f" />
+                  </linearGradient>
+                  <linearGradient id="shellEdge" x1="0" y1="0" x2="1" y2="1">
+                    <stop offset="0%" stopColor="#7a7c82" />
+                    <stop offset="45%" stopColor="#232427" />
+                    <stop offset="100%" stopColor="#050506" />
+                  </linearGradient>
+                  <radialGradient id="shellSpecular" cx="35%" cy="0%" r="60%">
+                    <stop offset="0%" stopColor="rgba(255,255,255,0.16)" />
+                    <stop offset="100%" stopColor="rgba(255,255,255,0)" />
+                  </radialGradient>
+                  <linearGradient id="btnFill" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#0a0a0b" />
+                    <stop offset="50%" stopColor="#404247" />
+                    <stop offset="100%" stopColor="#0a0a0b" />
+                  </linearGradient>
+                </defs>
 
-              <div className="device-body">
-                {/* Status bar */}
+                {/* Body + chamfer edge */}
+                <rect x="2" y="2" width="296" height="616" rx="50" fill="url(#shellBody)" stroke="url(#shellEdge)" strokeWidth="2.5" />
+                {/* Top specular sheen */}
+                <rect x="2" y="2" width="296" height="616" rx="50" fill="url(#shellSpecular)" />
+                {/* Antenna cutlines */}
+                <rect x="2" y="358" width="296" height="1" fill="rgba(0,0,0,0.55)" />
+                <rect x="2" y="360" width="296" height="0.75" fill="rgba(255,255,255,0.05)" />
+
+                {/* Side buttons — protrude slightly past the body edge */}
+                <rect x="-3" y="128" width="4" height="48" rx="1.5" fill="url(#btnFill)" />
+                <rect x="-3" y="192" width="4" height="48" rx="1.5" fill="url(#btnFill)" />
+                <rect x="299" y="150" width="4" height="68" rx="1.5" fill="url(#btnFill)" />
+              </svg>
+
+              {/* Screen overlay — status bar / island share the screen's own
+                  background instead of a separate bezel-colored strip */}
+              <div className="device-screen">
+                <div className="device-status-scrim" />
                 <div className="device-status-bar">
                   <span className="device-time">9:41</span>
                   <div className="device-status-icons">
@@ -110,31 +152,28 @@ export default function IdePreviewPane({ fileData: file, srcdoc, onRun }) {
                   </div>
                 </div>
 
-                {/* Dynamic island */}
-                <div className="device-punch-hole" />
-
-                {/* Screen content */}
-                <div className="device-screen">
-                  {loading && (
-                    <div className="screen-loader">
-                      <div className="screen-loader-dot" />
-                      <div className="screen-loader-dot" />
-                      <div className="screen-loader-dot" />
-                    </div>
-                  )}
-                  {srcdoc && (
-                    <iframe
-                      key={frameKey}
-                      srcDoc={srcdoc}
-                      title="Live Preview"
-                      sandbox="allow-scripts"
-                      onLoad={() => setLoading(false)}
-                      style={{ opacity: loading ? 0 : 1, transition: "opacity 300ms" }}
-                    />
-                  )}
+                <div className="device-punch-hole">
+                  <div className="device-camera-dot" />
                 </div>
 
-                {/* Home indicator */}
+                {loading && (
+                  <div className="screen-loader">
+                    <div className="screen-loader-dot" />
+                    <div className="screen-loader-dot" />
+                    <div className="screen-loader-dot" />
+                  </div>
+                )}
+                {srcdoc && (
+                  <iframe
+                    key={frameKey}
+                    srcDoc={srcdoc}
+                    title="Live Preview"
+                    sandbox="allow-scripts"
+                    onLoad={() => setLoading(false)}
+                    style={{ opacity: loading ? 0 : 1, transition: "opacity 300ms" }}
+                  />
+                )}
+
                 <div className="device-home-bar" />
               </div>
             </div>
