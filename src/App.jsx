@@ -4,30 +4,49 @@ import IdeShell from "./components/IdeShell";
 import ShareModal from "./components/ShareModal";
 import ChallengeModal from "./components/ChallengeModal";
 import { FILES, BOOT_STEPS, LOG_TEMPLATES } from "./data";
-import { CHALLENGES } from "./data/challenges";
+import { CHALLENGES, stripComments } from "./data/challenges";
 import { generateSrcdoc, detectPackages } from "./utils/livePreview";
+
+const STORAGE_KEY = "runway:workspace";
+
+function loadPersisted() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    if (!parsed || typeof parsed !== "object" || !parsed.fileContents) return null;
+    return parsed;
+  } catch {
+    return null;
+  }
+}
+
+const persisted = loadPersisted();
 
 export default function App() {
   const [isLoaded, setIsLoaded] = useState(false);
   const [bootStep, setBootStep] = useState(0);
   const [bootProgress, setBootProgress] = useState(6);
-  const [activeFile, setActiveFile] = useState(FILES[0].name);
-  const [files, setFiles] = useState(FILES);
+  const [activeFile, setActiveFile] = useState(persisted?.activeFile ?? FILES[0].name);
+  const [files, setFiles] = useState(persisted?.files ?? FILES);
   const [fileContents, setFileContents] = useState(
-    () => Object.fromEntries(FILES.map((f) => [f.name, f.code]))
+    () => persisted?.fileContents ?? Object.fromEntries(FILES.map((f) => [f.name, f.code]))
   );
   const [logs, setLogs] = useState([]);
   const [srcdoc, setSrcdoc] = useState("");
   const [showShare, setShowShare] = useState(false);
-  const [extraPackages, setExtraPackages] = useState([]);
-  const [projectName, setProjectName] = useState("runway-project");
+  const [extraPackages, setExtraPackages] = useState(persisted?.extraPackages ?? []);
+  const [projectName, setProjectName] = useState(persisted?.projectName ?? "runway-project");
   const [showChallenges, setShowChallenges] = useState(false);
   const [challenges, setChallenges] = useState(CHALLENGES);
-  const [activeChallenge, setActiveChallenge] = useState(null);
-  const [testResults, setTestResults] = useState(null);
+  const [activeChallenge, setActiveChallenge] = useState(
+    () => CHALLENGES.find((c) => c.id === persisted?.activeChallengeId) ?? null
+  );
+  const [testResults, setTestResults] = useState(persisted?.testResults ?? null);
   const [editorKey, setEditorKey] = useState(0);
   const rootRef = useRef(null);
   const rafRef = useRef(null);
+  const pristineRef = useRef(JSON.stringify(fileContents));
 
   const addLog = useCallback((message, tone = "system") => {
     setLogs((prev) => [
@@ -96,10 +115,42 @@ export default function App() {
         if (e.data.status === "loaded") addLog(`packages: loaded ${e.data.name}`, "system");
         if (e.data.status === "error") addLog(`packages: failed to load ${e.data.name} — ${e.data.error}`, "trace");
       }
+      if (e.data?.type === "runway-runtime-error") {
+        addLog(`preview: runtime error — ${e.data.message}`, "trace");
+      }
     };
     window.addEventListener("message", handler);
     return () => window.removeEventListener("message", handler);
   }, [addLog]);
+
+  // Autosave workspace to localStorage 400ms after any change
+  useEffect(() => {
+    if (!isLoaded) return;
+    const t = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify({
+          files,
+          fileContents,
+          activeFile,
+          projectName,
+          extraPackages,
+          activeChallengeId: activeChallenge?.id ?? null,
+          testResults,
+        }));
+      } catch {
+        // storage full or unavailable — nothing we can do, skip this save
+      }
+    }, 400);
+    return () => clearTimeout(t);
+  }, [files, fileContents, activeFile, projectName, extraPackages, activeChallenge, testResults, isLoaded]);
+
+  // Warn before closing/refreshing so in-progress work isn't lost by accident
+  useEffect(() => {
+    if (!isLoaded) return;
+    const handler = (e) => { e.preventDefault(); e.returnValue = ""; };
+    window.addEventListener("beforeunload", handler);
+    return () => window.removeEventListener("beforeunload", handler);
+  }, [isLoaded]);
 
   // Live preview: regenerate srcdoc 600ms after any file change
   useEffect(() => {
@@ -147,12 +198,23 @@ export default function App() {
   }, [addLog]);
 
   const handleStartChallenge = useCallback((challenge) => {
+    const hasUnsavedWork = JSON.stringify(fileContents) !== pristineRef.current;
+    if (hasUnsavedWork) {
+      const ok = window.confirm(
+        activeChallenge
+          ? `Switching to "${challenge.title}" will clear your current workspace, including any unsaved work on "${activeChallenge.title}". Continue?`
+          : `Starting "${challenge.title}" will clear your current workspace. Continue?`
+      );
+      if (!ok) return;
+    }
+
     const appCode = `import { View, Text, StyleSheet } from "react-native";\n\nexport default function App() {\n  return (\n    <View style={styles.container}>\n      <Text style={styles.text}>Start building...</Text>\n    </View>\n  );\n}\n\nconst styles = StyleSheet.create({\n  container: { flex: 1, backgroundColor: "#0f172a", alignItems: "center", justifyContent: "center" },\n  text: { color: "#94a3b8", fontSize: 16 },\n});\n`;
 
     const appFile = { name: "App.tsx", label: "new", accent: "aurora", code: appCode, previewTitle: challenge.title, previewCopy: "" };
 
     setFiles([appFile]);
     setFileContents({ "App.tsx": appCode });
+    pristineRef.current = JSON.stringify({ "App.tsx": appCode });
     setActiveFile("App.tsx");
     setActiveChallenge(challenge);
     setTestResults(null);
@@ -160,11 +222,11 @@ export default function App() {
     setEditorKey((k) => k + 1); // force Monaco to remount + dispose all cached models
     setShowChallenges(false);
     addLog(`challenge: started "${challenge.title}" — workspace cleared`, "system");
-  }, [addLog]);
+  }, [addLog, fileContents, activeChallenge]);
 
   const handleRunTests = useCallback(() => {
     if (!activeChallenge) return;
-    const allCode = Object.values(fileContents).join("\n");
+    const allCode = stripComments(Object.values(fileContents).join("\n"));
     const results = {};
     let passCount = 0;
     for (const tc of activeChallenge.testCases) {

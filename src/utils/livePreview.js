@@ -163,10 +163,26 @@ export function generateSrcdoc(files, fileContents, extraPackages = []) {
 </head>
 <body>
 <div id="root"></div>
-<script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
-<script src="https://unpkg.com/react@18/umd/react.development.js"></script>
-<script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+<script src="https://unpkg.com/@babel/standalone@7.26.4/babel.min.js"></script>
+<script src="https://unpkg.com/react@18.3.1/umd/react.development.js"></script>
+<script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js"></script>
 <script>${RN_SHIM}</script>
+<script>
+// Catch errors thrown after the initial render (event handlers, effects,
+// timers, rejected promises) — without this the preview just goes blank
+// with no feedback when a candidate's code throws asynchronously.
+window.addEventListener('error', function(e){
+  var root=document.getElementById('root');
+  if(root) root.innerHTML='<div class="err"><b style="color:#ff9b71">Runtime error</b>\\n'+(e.error&&e.error.message||e.message)+'</div>';
+  window.parent.postMessage({ type:'runway-runtime-error', message:(e.error&&e.error.message||e.message) }, '*');
+});
+window.addEventListener('unhandledrejection', function(e){
+  var root=document.getElementById('root');
+  var message=(e.reason&&e.reason.message)||String(e.reason);
+  if(root) root.innerHTML='<div class="err"><b style="color:#ff9b71">Unhandled promise rejection</b>\\n'+message+'</div>';
+  window.parent.postMessage({ type:'runway-runtime-error', message:message }, '*');
+});
+</script>
 <script type="module">
 (async function(){
   if(typeof Babel==='undefined'){
@@ -246,7 +262,7 @@ export function generateSrcdoc(files, fileContents, extraPackages = []) {
     var isTS=name.endsWith('.ts')||name.endsWith('.tsx');
     var presets=[['env',{modules:'commonjs',targets:{chrome:'90'}}]];
     if(isTSX) presets.unshift(['react',{pragma:'React.createElement',pragmaFrag:'React.Fragment'}]);
-    if(isTS)  presets.unshift(['typescript',{isTSX:isTSX,allExtensions:true}]);
+    if(isTS)  presets.unshift(['typescript']);
 
     try{
       var res=Babel.transform(code,{filename:name,presets:presets,sourceType:'module',configFile:false,babelrc:false});
