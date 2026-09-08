@@ -158,18 +158,20 @@ export default function IdePreviewPane({ fileData: file, srcdoc, onRun }) {
                 <div className="device-status-bar">
                   <span className="device-time">9:41</span>
                   <div className="device-status-icons">
-                    {/* Signal bars */}
+                    {/* Signal bars — 4 solid ascending bars, bottom-aligned */}
                     <svg width="16" height="12" viewBox="0 0 16 12" fill="none">
-                      <rect x="0" y="5" width="3" height="7" rx="0.6" fill="currentColor" opacity="0.35"/>
-                      <rect x="4.5" y="3" width="3" height="9" rx="0.6" fill="currentColor" opacity="0.6"/>
-                      <rect x="9" y="1" width="3" height="11" rx="0.6" fill="currentColor" opacity="0.85"/>
+                      <rect x="0" y="5" width="3" height="7" rx="0.6" fill="currentColor"/>
+                      <rect x="4.5" y="3" width="3" height="9" rx="0.6" fill="currentColor"/>
+                      <rect x="9" y="1" width="3" height="11" rx="0.6" fill="currentColor"/>
                       <rect x="13.5" y="0" width="2.5" height="12" rx="0.6" fill="currentColor"/>
                     </svg>
-                    {/* WiFi */}
-                    <svg width="15" height="11" viewBox="0 0 15 11" fill="none">
-                      <path d="M7.5 8.5 C8.3 8.5 9 9.2 9 10 C9 10.8 8.3 11.5 7.5 11.5 C6.7 11.5 6 10.8 6 10 C6 9.2 6.7 8.5 7.5 8.5Z" fill="currentColor"/>
-                      <path d="M4.5 6.5 C5.5 5.4 6.4 4.8 7.5 4.8 C8.6 4.8 9.5 5.4 10.5 6.5" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" fill="none"/>
-                      <path d="M2 4 C3.7 2 5.5 0.8 7.5 0.8 C9.5 0.8 11.3 2 13 4" stroke="currentColor" strokeWidth="1.3" strokeLinecap="round" fill="none" opacity="0.65"/>
+                    {/* WiFi — 2 fan arcs + dot, all fully inside the viewBox
+                        (the old dot overflowed its box and got clipped) */}
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.6" strokeLinecap="round" strokeLinejoin="round">
+                      <path d="M1.42 9a16 16 0 0 1 21.16 0" />
+                      <path d="M5 12.55a11 11 0 0 1 14.08 0" />
+                      <path d="M8.53 16.11a6 6 0 0 1 6.95 0" />
+                      <circle cx="12" cy="20" r="1" fill="currentColor" stroke="none" />
                     </svg>
                     {/* Battery */}
                     <div className="device-battery">
