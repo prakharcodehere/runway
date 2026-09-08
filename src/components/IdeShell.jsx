@@ -18,6 +18,7 @@ const IdeShell = memo(function IdeShell({
   onFileChange,
   onNewFile,
   onRun,
+  onReset,
   onAction,
   onClearLogs,
   onSave,
@@ -95,6 +96,11 @@ const IdeShell = memo(function IdeShell({
         </button>
         <button type="button" className="topbar-btn accent" onClick={() => onAction("expo")}>
           Open in Expo
+        </button>
+        <button type="button" className="topbar-icon-btn" onClick={onReset} title="Reset workspace">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none">
+            <path d="M13.65 2.35A7.958 7.958 0 008 0a8 8 0 108 8h-1.5A6.5 6.5 0 118 1.5c1.63 0 3.11.66 4.18 1.72L9.5 5.9H16V0l-2.35 2.35z" fill="currentColor"/>
+          </svg>
         </button>
         <a
           href="https://github.com/prakharcodehere/runway"

@@ -297,6 +297,26 @@ export default function App() {
     setTimeout(() => addLog("metro: compiled in 184 ms — preview refreshed", "preview"), 400);
   }, [files, fileContents, extraPackages, addLog]);
 
+  const handleReset = useCallback(() => {
+    const ok = window.confirm("Reset the whole workspace? This clears all files, packages, and challenge progress — it can't be undone.");
+    if (!ok) return;
+
+    try { localStorage.removeItem(STORAGE_KEY); } catch { /* storage unavailable, nothing to clear */ }
+
+    const defaultContents = Object.fromEntries(FILES.map((f) => [f.name, f.code]));
+    setFiles(FILES);
+    setFileContents(defaultContents);
+    pristineRef.current = JSON.stringify(defaultContents);
+    setActiveFile(FILES[0].name);
+    setExtraPackages([]);
+    setProjectName("runway-project");
+    setChallenges(CHALLENGES);
+    setActiveChallenge(null);
+    setTestResults(null);
+    setEditorKey((k) => k + 1); // force Monaco to remount + dispose all cached models
+    addLog("workspace: reset to defaults", "system");
+  }, [addLog]);
+
   const handleAction = useCallback((action) => {
     if (action === "share") { setShowShare(true); return; }
     const msgs = {
@@ -351,6 +371,7 @@ export default function App() {
         onFileChange={handleFileChange}
         onNewFile={handleNewFile}
         onRun={handleRun}
+        onReset={handleReset}
         onAction={handleAction}
         onClearLogs={handleClearLogs}
         onSave={handleRun}
